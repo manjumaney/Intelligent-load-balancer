@@ -25,7 +25,7 @@ class GlobalStats:
     total_errors = 0
     total_latency_ms = 0.0
 
-
+ 
 # Configuration (all overridable via environment variables / docker-compose)
  
 
@@ -174,7 +174,7 @@ app = FastAPI(title="Load Balancer", lifespan=lifespan)
 
 
  
-# Status / observability endpoint
+# Status / observability endpoint (useful now, and for Phase 3 dashboard)
  
 
 @app.get("/lb/status")
@@ -308,6 +308,8 @@ async def dashboard():
     <!DOCTYPE html>
     <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Traffic Control — Load Balancer</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -393,6 +395,11 @@ async def dashboard():
             .two-col .card-section { margin-bottom: 0; }
             @media (max-width: 900px) {
                 .two-col { grid-template-columns: 1fr; }
+            }
+
+            .table-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .page-intro { margin-bottom: 36px; }
@@ -648,6 +655,37 @@ async def dashboard():
                 background: var(--surface);
                 color: var(--ink);
             }
+
+            /* Mobile: phones and small tablets. Placed last so it correctly
+               overrides the desktop rules above at matching specificity. */
+            @media (max-width: 640px) {
+                .site-header {
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    padding: 14px 18px;
+                }
+                nav.site-nav {
+                    flex-wrap: wrap;
+                    gap: 2px;
+                    width: 100%;
+                }
+                nav.site-nav a { padding: 6px 9px; font-size: 0.8rem; }
+                .brand-tag { display: none; }
+
+                main { padding: 28px 16px 60px; }
+                .card-section { padding: 20px 18px; }
+
+                .stat-grid { grid-template-columns: 1fr 1fr; }
+
+                .segmented { flex-wrap: wrap; width: 100%; }
+                .segmented button { flex: 1 1 auto; text-align: center; }
+
+                .test-controls { flex-wrap: wrap; }
+                .test-controls input { width: 90px; }
+
+                table { font-size: 0.82rem; }
+                th, td { padding: 8px 8px; white-space: nowrap; }
+            }
         </style>
     </head>
     <body>
@@ -714,10 +752,12 @@ async def dashboard():
                     <p class="section-kicker">Infrastructure</p>
                     <h2>Backend Servers</h2>
                     <hr class="section-divider">
-                    <table>
-                        <thead><tr><th>Address</th><th>Status</th><th>Weight</th><th>Requests Handled</th></tr></thead>
-                        <tbody id="backend-rows"></tbody>
-                    </table>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th>Address</th><th>Status</th><th>Weight</th><th>Requests Handled</th></tr></thead>
+                            <tbody id="backend-rows"></tbody>
+                        </table>
+                    </div>
                     <div id="backend-msg" class="note"></div>
                 </section>
 
@@ -749,10 +789,12 @@ async def dashboard():
                         <canvas id="latency-chart" height="90"></canvas>
                     </div>
 
-                    <table>
-                        <thead><tr><th>Time</th><th>Backend</th><th>Status</th><th>Latency</th></tr></thead>
-                        <tbody id="log-rows"></tbody>
-                    </table>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th>Time</th><th>Backend</th><th>Status</th><th>Latency</th></tr></thead>
+                            <tbody id="log-rows"></tbody>
+                        </table>
+                    </div>
                 </section>
             </div>
         </main>
@@ -760,7 +802,7 @@ async def dashboard():
         <footer class="site-footer">
             <p class="about-disclaimer">
                 Disclaimer: this project was built for academic purposes as part of a University
-                networking course project. It is not intended for any other use.
+                networking project. It is not intended for any other use.
             </p>
         </footer>
 
