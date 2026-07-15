@@ -301,6 +301,14 @@ async def set_weight(request: Request):
     )
 
 
+@app.get("/healthz")
+async def healthz():
+    """Lightweight liveness check for the hosting platform (e.g. Render) to ping,
+    so its automatic health checks don't hit the catch-all proxy and get counted
+    as real traffic. Point your platform's 'Health Check Path' setting here."""
+    return {"status": "ok"}
+
+
 @app.get("/favicon.ico")
 async def favicon():
     """Browsers auto-request this on every page load. Handle it here so it
@@ -809,7 +817,7 @@ async def dashboard():
         <footer class="site-footer">
             <p class="about-disclaimer">
                 Disclaimer: this project was built for academic purposes as part of a University
-                networking project. It is not intended for any other use.
+                Networking project. It is not intended for any other use.
             </p>
         </footer>
 
