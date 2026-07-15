@@ -368,6 +368,7 @@ async def dashboard():
                 background: var(--bg);
                 color: var(--ink);
                 margin: 0;
+                overflow-x: hidden;
             }
 
             .site-header {
@@ -432,6 +433,7 @@ async def dashboard():
             .table-scroll {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                min-width: 0;
             }
 
             .page-intro { margin-bottom: 36px; }
@@ -449,6 +451,7 @@ async def dashboard():
                 padding: 28px 30px;
                 margin-bottom: 28px;
                 scroll-margin-top: 84px;
+                min-width: 0;
             }
             .plain-section {
                 margin-bottom: 40px;
@@ -857,8 +860,8 @@ async def dashboard():
 
         <footer class="site-footer">
             <p class="about-disclaimer">
-                Disclaimer: this project was built for academic purposes as part of a University
-                Networking project. It is not intended for any other use.
+                Disclaimer: this project was built for academic purposes as part of a college
+                networking/distributed-systems assignment. It is not intended for production use.
             </p>
         </footer>
 
