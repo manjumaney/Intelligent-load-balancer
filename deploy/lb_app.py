@@ -301,6 +301,23 @@ async def set_weight(request: Request):
     )
 
 
+@app.post("/lb/reset")
+async def reset_stats():
+    """Zero out all request counters and the rolling log — useful to get a
+    clean slate before a demo, regardless of any platform-level pings that
+    may have touched the counters after a deploy."""
+    GlobalStats.total_requests = 0
+    GlobalStats.total_errors = 0
+    GlobalStats.total_latency_ms = 0.0
+    for b in BACKENDS:
+        b.total_requests = 0
+        b.total_errors = 0
+        b.total_latency_ms = 0.0
+    REQUEST_LOG.clear()
+    logger.info("Stats reset via /lb/reset")
+    return {"status": "reset"}
+
+
 @app.get("/healthz")
 async def healthz():
     """Lightweight liveness check for the hosting platform (e.g. Render) to ping,
@@ -605,12 +622,33 @@ async def dashboard():
                 color: var(--ink-soft);
                 margin-top: 10px;
             }
+            .analytics-header-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin: -8px 0 18px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
             .refresh-note {
                 font-family: 'IBM Plex Mono', monospace;
                 font-size: 0.72rem;
                 color: var(--ink-soft);
-                margin: -8px 0 18px;
+                margin: 0;
             }
+            .reset-btn {
+                font-family: 'Inter', sans-serif;
+                font-size: 0.78rem;
+                font-weight: 500;
+                color: var(--ink-soft);
+                background: none;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 6px 12px;
+                cursor: pointer;
+                transition: border-color 0.15s ease, color 0.15s ease;
+            }
+            .reset-btn:hover { border-color: var(--down); color: var(--down); }
             #switch-msg {
                 font-family: 'IBM Plex Mono', monospace;
                 font-size: 0.78rem;
@@ -780,7 +818,10 @@ async def dashboard():
                     <p class="section-kicker">Observability</p>
                     <h2>Request Analytics</h2>
                     <hr class="section-divider">
-                    <p class="refresh-note" id="refresh-note"></p>
+                    <div class="analytics-header-row">
+                        <p class="refresh-note" id="refresh-note"></p>
+                        <button class="reset-btn" onclick="resetStats()">Reset stats</button>
+                    </div>
                     <div class="stat-grid">
                         <div class="stat-card">
                             <div class="stat-label">Total Requests</div>
@@ -875,6 +916,12 @@ async def dashboard():
                     ? `Weight updated: ${url} → ${data.weight}`
                     : `Error: ${data.error}`;
                 refreshStatus();
+            }
+
+            async function resetStats() {
+                await fetch('/lb/reset', { method: 'POST' });
+                refreshStatus();
+                refreshAnalytics();
             }
 
             async function switchAlgorithm(algo) {
