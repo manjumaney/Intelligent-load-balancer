@@ -25,9 +25,9 @@ class GlobalStats:
     total_errors = 0
     total_latency_ms = 0.0
 
- 
+  
 # Configuration (all overridable via environment variables / docker-compose)
- 
+  
 
 # Format: "http://backend1:8000:1,http://backend2:8000:2,http://backend3:8000:1"
 # The trailing number is the weight (used only by weighted_round_robin). Defaults to 1.
@@ -87,9 +87,9 @@ def parse_servers(raw: str):
 BACKENDS = parse_servers(RAW_SERVERS)
 client = httpx.AsyncClient(timeout=REQUEST_TIMEOUT)
 
- 
+  
 # Load balancing algorithms
- 
+  
 
 _rr_counter = count()
 
@@ -137,9 +137,9 @@ def select_backend():
     return picker()
 
 
- 
+  
 # Background health checking (drives failover + recovery)
- 
+  
 
 async def health_check_loop():
     while True:
@@ -173,9 +173,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Load Balancer", lifespan=lifespan)
 
 
- 
+  
 # Status / observability endpoint (useful now, and for Phase 3 dashboard)
- 
+  
 
 @app.get("/lb/status")
 async def status():
@@ -299,6 +299,13 @@ async def set_weight(request: Request):
         status_code=404,
         media_type="application/json",
     )
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Browsers auto-request this on every page load. Handle it here so it
+    doesn't fall through to the catch-all proxy and get counted as traffic."""
+    return Response(status_code=204)
 
 
 @app.get("/lb/dashboard")
@@ -1023,10 +1030,10 @@ async def dashboard():
     return Response(content=html, media_type="text/html")
 
 
- 
+  
 # Main reverse-proxy route: forwards any request to a chosen backend,
 # retries once on a different backend if the first choice fails (failover).
- 
+  
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(path: str, request: Request):
