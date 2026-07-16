@@ -29,8 +29,10 @@ class GlobalStats:
 # Configuration (all overridable via environment variables / docker-compose)
   
 
-# Format: "http://backend1:8000:1,http://backend2:8000:2,http://backend3:8000:1"
-# The trailing number is the weight (used only by weighted_round_robin). Defaults to 1.
+# Format: "http://host:port:weight,http://host:port:weight,..." (weight defaults to 1).
+# In this single-container deployment, all 3 backend instances run inside the
+# same process, so they're distinguished by PORT (8001/8002/8003) on localhost,
+# not by separate hostnames — unlike a multi-container docker-compose setup.
 RAW_SERVERS = os.getenv(
     "BACKEND_SERVERS",
     "http://localhost:8001:1,http://localhost:8002:1,http://localhost:8003:1",
@@ -860,8 +862,8 @@ async def dashboard():
 
         <footer class="site-footer">
             <p class="about-disclaimer">
-                Disclaimer: this project was built for academic purposes as part of a college
-                networking/distributed-systems assignment. It is not intended for production use.
+                Disclaimer: this project was built for academic purposes as part of a University
+                Networking project. It is not intended for any other use.
             </p>
         </footer>
 
@@ -877,6 +879,11 @@ async def dashboard():
             };
             const barColors = ["#2c3e6b", "#4f7a6d", "#a67c3d"];
             let latestBackends = [];
+
+            function friendlyName(url) {
+                const idx = latestBackends.findIndex(b => b.url === url);
+                return idx >= 0 ? `Server ${idx + 1}` : url;
+            }
 
             async function refreshStatus() {
                 const res = await fetch('/lb/status');
@@ -899,7 +906,7 @@ async def dashboard():
                 const rows = document.getElementById('backend-rows');
                 rows.innerHTML = data.backends.map(b => `
                     <tr>
-                        <td class="mono">${b.url}</td>
+                        <td class="mono" title="${b.url}">${friendlyName(b.url)}</td>
                         <td class="${b.healthy ? 'status-healthy' : 'status-down'}"><span class="dot ${b.healthy ? 'healthy' : 'down'}"></span>${b.healthy ? 'Healthy' : 'Down'}</td>
                         <td><input class="weight-input" type="number" min="1" value="${b.weight}"
                                 onchange="updateWeight('${b.url}', this.value)"></td>
@@ -916,7 +923,7 @@ async def dashboard():
                 });
                 const data = await res.json();
                 document.getElementById('backend-msg').textContent = res.ok
-                    ? `Weight updated: ${url} → ${data.weight}`
+                    ? `Weight updated: ${friendlyName(url)} → ${data.weight}`
                     : `Error: ${data.error}`;
                 refreshStatus();
             }
@@ -972,7 +979,7 @@ async def dashboard():
                     return `
                         <div class="bar-row">
                             <div class="bar-meta">
-                                <span class="url">${url}</span>
+                                <span class="url" title="${url}">${friendlyName(url)}</span>
                                 <span class="count">${count} <span style="color: var(--ink-soft); font-family: 'Inter'; font-weight: 400; font-size: 0.8rem;">(${pct}%)</span></span>
                             </div>
                             <div class="bar-track">
@@ -1020,7 +1027,7 @@ async def dashboard():
                     return `
                         <tr>
                             <td class="mono">${formatTime(l.timestamp)}</td>
-                            <td class="mono">${l.backend}</td>
+                            <td class="mono" title="${l.backend}">${friendlyName(l.backend)}</td>
                             <td>${badge}</td>
                             <td>${l.response_time_ms} ms</td>
                         </tr>
@@ -1038,7 +1045,7 @@ async def dashboard():
                     : [...new Set(chronological.map(l => l.backend))];
 
                 const datasets = backendUrls.map((url, i) => ({
-                    label: url,
+                    label: friendlyName(url),
                     data: chronological.map(l => l.backend === url ? l.response_time_ms : null),
                     borderColor: barColors[i % barColors.length],
                     backgroundColor: barColors[i % barColors.length],
